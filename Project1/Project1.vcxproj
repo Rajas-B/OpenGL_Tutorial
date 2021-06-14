@@ -138,6 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="res\vendor\stb_image\stb_image.cpp" />
     <ClCompile Include="src\IndexBuffer.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
     <ClCompile Include="src\Shader.cpp" />
@@ -149,7 +150,7 @@
     <None Include="res\shaders\Basic.shader" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="res\vendor\texture\stb_image.h" />
+    <ClInclude Include="res\vendor\stb_image\stb_image.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\VertexBufferLayout.h" />
     <ClInclude Include="src\IndexBuffer.h" />

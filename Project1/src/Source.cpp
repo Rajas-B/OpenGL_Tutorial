@@ -1,10 +1,13 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
 #include<iostream>
 #include<conio.h>
 #include<fstream>
 #include<string>
-#include<sstream> 
+#include<sstream>
+#include<unordered_map>
+
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
@@ -12,11 +15,18 @@
 #include "VertexArray.h"
 #include "Shader.h"
 #include "Texture.h"
+
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+
+#include "Tests/Test.h"
+#include "Tests/TestClearColor.h"
+#include "Tests/TestTexture2D.h"
+
 
 int main(void)
 {
@@ -61,15 +71,14 @@ int main(void)
 
 		GLCall(glEnable(GL_BLEND));
 		GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
+		/*
 		glm::vec3 translationA(200, 200, 0);
 		glm::vec3 translationB(400, 200, 0);
 
 
 		glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-		glm::mat4 view = glm::translate(glm::mat4 (1.0f), glm::vec3(0, 0, 0));
+		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 		
-
 		Shader shader("res/shaders/Basic.shader");
 		shader.Bind();
 
@@ -85,14 +94,10 @@ int main(void)
 
 		Texture texture("res/textures/doggo.png");
 		texture.Bind();
-		
+		*/
 
 
 		Renderer renderer;
-		shader.SetUniform1i("u_Texture", 0);
-
-		float r = 0.0f, increment = 0.05f;
-
 
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -100,50 +105,46 @@ int main(void)
 
 
 		ImGui::StyleColorsDark();
+		
+		test::Test* CurrentTest = nullptr;
+		test::TestMenu* testMenu = new test::TestMenu(CurrentTest);
+		CurrentTest = testMenu;
+		
+		testMenu->RegisterTest<test::TestClearColor>("Clear Color");
+		testMenu->RegisterTest<test::TestTexture2D>("2D Texture Test");
 
+		
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
 		ImGui_ImplOpenGL3_Init(glsl_version);
 		ImGui_ImplOpenGL3_Init((char *)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
-			
-
+		bool sliderA = false, sliderB = false;
 		while (!glfwWindowShouldClose(window))
 		{
 			/* Render here */
 			renderer.Clear();
-
-			glfwPollEvents();
-			{
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), translationA);
-				glm::mat4 mvp = proj * view * model;
-
-				shader.SetUniformMat4f("u_MVP", mvp);
-				renderer.Draw(va, ib, shader);
-			}
-			{
-				glm::mat4 model = glm::translate(glm::mat4(1.0f), translationB);
-				glm::mat4 mvp = proj * view * model;
-
-				shader.SetUniformMat4f("u_MVP", mvp);
-				renderer.Draw(va, ib, shader);
-			}
 			
+			glfwPollEvents();
 
 			ImGui_ImplOpenGL3_NewFrame();
 			ImGui_ImplGlfw_NewFrame();
 			ImGui::NewFrame();
-
 			{
-				static float f = 0.0f;
 
-				ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+				if (CurrentTest) {
+					CurrentTest->OnUpdate(0.0f);
+					CurrentTest->OnRender();
+					ImGui::Begin("Test");
+					if (CurrentTest != testMenu && ImGui::Button("<-")) {
+						GLCall(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+						delete CurrentTest;
+						CurrentTest = testMenu;
+					}
+					CurrentTest->OnImguiRender();
+					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+					ImGui::End();
+				}
 
-				ImGui::SliderFloat3("float", &translationA.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-				ImGui::SliderFloat3("float", &translationB.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-				ImGui::End();
 			}
-			// GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 			ImGui::Render();
 	
 			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -152,6 +153,10 @@ int main(void)
 
 			/* Poll for and process events */
 
+		}
+		delete CurrentTest;
+		if (CurrentTest != testMenu) {
+			delete testMenu;
 		}
 
 	}
